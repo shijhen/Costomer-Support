@@ -1,0 +1,485 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Quick Fix Finder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: single centered column. Search card on top, accordion cards for each issue, contact card at the bottom. White ground, blue accent. */
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --soft: #f4f7fd;
+  --line: #dde5f3;
+  --fg: #0e1a33;
+  --muted: #56637f;
+  --blue: #1b5fe4;
+  --blue-dark: #1448b4;
+  --blue-soft: #e9f0ff;
+  --ok: #11783a;
+  --ok-soft: #e7f5ec;
+  --err: #b42318;
+  --green-line: #d3ebdc;
+  --green: #1f9d55;
+  --red-line: #e5665e;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid #8fb2ff; outline-offset: 2px; }
+
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); }
+header { display: flex; flex-direction: column; gap: 8px; }
+h1 { font-size: clamp(28px, 5vw, 38px); line-height: 1.1; font-weight: 700; }
+.lead { margin: 0; color: var(--muted); max-width: 60ch; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.search { padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 6px 24px rgba(27, 95, 228, .07); }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > label, .label { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.row { display: grid; grid-template-columns: 1fr 220px; gap: 14px; }
+.control {
+  width: 100%; min-width: 0; height: 44px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+}
+.control:hover { border-color: #b9c9e8; }
+.control:focus { border-color: var(--blue); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); font-weight: 500; color: var(--muted);
+}
+.chip:hover { border-color: var(--blue); color: var(--blue); }
+.chip[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+.meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--blue); font-weight: 600; cursor: pointer; }
+.linkbtn:hover { text-decoration: underline; }
+
+.list { display: flex; flex-direction: column; gap: 12px; }
+.item { overflow: hidden; }
+.item.open { border-color: #a9c1f5; box-shadow: 0 6px 24px rgba(27, 95, 228, .09); }
+.item.mp { border-color: var(--green-line); }
+.item.mp.open { border-color: #a4d6b7; box-shadow: 0 6px 24px rgba(31, 157, 85, .09); }
+.item.mp .tag:not(.plain) { background: #e5f5ea; color: #157a3c; }
+.item.mp .head:hover { background: #f3faf5; }
+.head {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 16px 18px; background: transparent; border: 0; cursor: pointer;
+}
+.head:hover { background: var(--soft); }
+.head-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--blue-soft); color: var(--blue-dark); }
+.tag.plain { background: var(--soft); color: var(--muted); }
+.issue { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.chev { flex: none; width: 20px; height: 20px; color: var(--blue); transition: transform .15s; }
+.open .chev { transform: rotate(180deg); }
+
+.body { padding: 4px 18px 20px; display: flex; flex-direction: column; gap: 16px; }
+.block { padding: 14px 16px; border-radius: 10px; background: var(--soft); }
+.block.action { background: var(--blue-soft); }
+.block h3 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--blue-dark); margin-bottom: 4px; }
+.block.note h3 { color: var(--muted); }
+.block p { margin: 0; overflow-wrap: anywhere; }
+.divider { height: 1px; background: var(--line); }
+.ask { display: flex; flex-direction: column; gap: 10px; }
+.ask h3 { font-size: 16px; }
+.seg { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  height: 44px; padding: 0 18px; border-radius: 10px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--fg);
+}
+.btn:hover { border-color: var(--blue); color: var(--blue); }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+.btn.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); color: #fff; }
+.btn.yes[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+.btn.no[aria-pressed="true"] { background: var(--blue-soft); border-color: var(--blue); color: var(--blue-dark); }
+.success { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; background: var(--ok-soft); color: var(--ok); font-weight: 500; }
+.success svg { flex: none; margin-top: 2px; }
+
+.form { display: flex; flex-direction: column; gap: 14px; }
+textarea.control { height: auto; min-height: 130px; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+.counter { align-self: flex-end; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.counter.max { color: var(--err); font-weight: 600; }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.error { color: var(--err); font-size: 13px; margin: 0; }
+.send { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px dashed #a9c1f5; border-radius: 10px; }
+.send p { margin: 0; }
+.addr { font-weight: 600; user-select: all; overflow-wrap: anywhere; }
+.preview { font-size: 13px; background: var(--soft); }
+
+.empty { padding: 28px 20px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.empty strong { color: var(--fg); font-family: var(--font-display); font-size: 18px; }
+
+.contact { border: 2px solid var(--red-line); padding: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; background: var(--soft); }
+.contact h2 { font-size: 18px; }
+.contact p { margin: 4px 0 0; color: var(--muted); }
+.contact-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-width: 0; }
+.contact .addr { padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.toast { font-size: 13px; color: var(--ok); font-weight: 600; }
+
+@media (max-width: 560px) {
+  .row { grid-template-columns: 1fr; }
+  body { padding-block: 20px 36px; }
+}
+@media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Customer Support</span>
+    <h1>Quick Fix Finder</h1>
+    <p class="lead">Pick your product and describe what you see. We'll show the recommended fix. If it doesn't work, send us the details.</p>
+  </header>
+
+  <section class="card search" aria-label="Search">
+    <div class="row">
+      <div class="field">
+        <label for="q">Issue keyword</label>
+        <input id="q" class="control" type="search" placeholder="e.g. black out, firmware, connection" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="model">Model</label>
+        <select id="model" class="control"></select>
+      </div>
+    </div>
+    <div class="field">
+      <span class="label" id="cat-label">Category</span>
+      <div class="chips" id="cats" role="group" aria-labelledby="cat-label"></div>
+    </div>
+  </section>
+
+  <div class="meta">
+    <span id="count" aria-live="polite"></span>
+    <button class="linkbtn" id="reset" type="button">Clear filters</button>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <section class="card contact" aria-label="Contact">
+    <div>
+      <h2>Still need help?</h2>
+      <p>Email our support team directly.</p>
+    </div>
+    <div class="contact-actions">
+      <span class="addr" id="footAddr"></span>
+      <a class="btn primary" id="footMail" href="#">Write an email</a>
+      <button class="btn" id="footCopy" type="button">Copy address</button>
+      <span class="toast" id="footToast" role="status"></span>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var SUPPORT_EMAIL = "rydis-cs@rydis.co.kr";
+  var MAX_LEN = 1000;
+
+  var DATA = [
+    { id: 1, model: "Demo Kit", cat: "TV", issue: "Screen black out",
+      action: "Update to the latest app and check again. If it still happens, check the USB insertion status and the TV model, then share the details with us.", note: "" },
+    { id: 2, model: "Demo Kit", cat: "Speaker", issue: "Firmware update failed",
+      action: "Refer to the Demo Mode setup guide.",
+      note: "Mass-produced units do not need a separate firmware update. Demo Mode must be set so the soundbar does not enter power-saving mode." },
+    { id: 3, model: "Demo Kit", cat: "Speaker", issue: "Does not work when only the H7 is connected",
+      action: "This is normal.",
+      note: "Using the H7 on its own, without a Speaker, is not a supported operating environment." },
+    { id: 4, model: "Demo Kit", cat: "Speaker", issue: "Does not work with a single M-series Speaker connected",
+      action: "Update the WebOS Demo App.", note: "" },
+    { id: 5, model: "Demo Kit", cat: "Speaker", issue: "Speaker connection failure",
+      action: "Check the cable connection and update the Speaker firmware, then set Demo Mode.", note: "" },
+    { id: 6, model: "Demo Kit", cat: "Speaker", issue: "Speaker is not connected after power is restored",
+      action: "Set Demo Mode.",
+      note: "You can run a demo without Demo Mode, but the output setting resets after the next reboot." },
+    { id: 7, model: "Demo Kit", cat: "Speaker", issue: "Speaker firmware update failed",
+      action: "Check that you are using the latest firmware version.", note: "" },
+    { id: 8, model: "Demo Kit", cat: "TV", issue: "Demo Contents does not run correctly",
+      action: "Reinsert the USB drive, or press the remote's Back button to restart the app. Then reboot the TV.", note: "" },
+    { id: 9, model: "Demo Kit", cat: "TV", issue: "\"Connecting\" popup stays on screen",
+      action: "Check the LAN cable connection.", note: "" },
+    { id: 10, model: "Media Player", cat: "Monitor", issue: "\"Video for this Resolution does not exist\" message on screen",
+      action: "Check that the playback content matches the monitor's resolution.", note: "" },
+    { id: 11, model: "Media Player", cat: "Monitor", issue: "Screen black out",
+      action: "Update the APP.", note: "" }
+  ];
+
+  var models = ["All models"].concat(uniq(DATA.map(function (d) { return d.model; })));
+  var cats = ["All"].concat(uniq(DATA.map(function (d) { return d.cat; })));
+
+  var state = { q: "", model: "All models", cat: "All", openId: null, solved: {}, drafts: {}, sent: {}, errors: {}, focusKey: null };
+
+  var $q = document.getElementById("q");
+  var $model = document.getElementById("model");
+  var $cats = document.getElementById("cats");
+  var $list = document.getElementById("list");
+  var $count = document.getElementById("count");
+
+  function uniq(a) { return a.filter(function (v, i) { return a.indexOf(v) === i; }); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function svg(path, size) {
+    var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("width", size); s.setAttribute("height", size);
+    s.setAttribute("fill", "none"); s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "2");
+    s.setAttribute("stroke-linecap", "round"); s.setAttribute("stroke-linejoin", "round"); s.setAttribute("aria-hidden", "true");
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", path); s.appendChild(p);
+    return s;
+  }
+  function copyText(text, fallbackEl) {
+    var done = function () { return true; };
+    try {
+      return navigator.clipboard.writeText(text).then(done, function () { return fallback(); });
+    } catch (e) { return Promise.resolve(fallback()); }
+    function fallback() {
+      if (fallbackEl) { fallbackEl.focus(); fallbackEl.select && fallbackEl.select(); }
+      return false;
+    }
+  }
+
+  // Filters
+  models.forEach(function (m) {
+    var o = document.createElement("option"); o.value = m; o.textContent = m; $model.appendChild(o);
+  });
+  function drawCats() {
+    $cats.textContent = "";
+    cats.forEach(function (c) {
+      var b = el("button", "chip", c);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(state.cat === c));
+      b.addEventListener("click", function () { state.cat = c; state.openId = null; drawCats(); render(); });
+      $cats.appendChild(b);
+    });
+  }
+  $q.addEventListener("input", function () { state.q = $q.value; state.openId = null; render(); });
+  $model.addEventListener("change", function () { state.model = $model.value; state.openId = null; render(); });
+  document.getElementById("reset").addEventListener("click", resetFilters);
+  function resetFilters() {
+    state.q = ""; state.model = "All models"; state.cat = "All"; state.openId = null;
+    $q.value = ""; $model.value = "All models"; drawCats(); render();
+  }
+
+  function filtered() {
+    var words = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+    return DATA.filter(function (d) {
+      if (state.model !== "All models" && d.model !== state.model) return false;
+      if (state.cat !== "All" && d.cat !== state.cat) return false;
+      var hay = (d.model + " " + d.cat + " " + d.issue + " " + d.action + " " + d.note).toLowerCase();
+      return words.every(function (w) { return hay.indexOf(w) !== -1; });
+    });
+  }
+
+  function buildMessage(d, draft) {
+    var lines = [
+      "Model: " + d.model,
+      "Category: " + d.cat,
+      "Issue: " + d.issue,
+      "Suggested fix I tried: " + d.action,
+      "Reply to: " + draft.email,
+      "",
+      "Details:",
+      draft.text.trim()
+    ];
+    return {
+      subject: "[Support] " + d.model + " / " + d.cat + " - " + d.issue,
+      body: lines.join("\n")
+    };
+  }
+  function mailto(subject, body) {
+    return "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  }
+
+  function render() {
+    var items = filtered();
+    $count.textContent = items.length + (items.length === 1 ? " issue" : " issues") + " found";
+    $list.textContent = "";
+    if (!items.length) {
+      var e = el("div", "card empty");
+      e.appendChild(el("strong", null, "No matching issue"));
+      e.appendChild(el("span", null, "Try fewer keywords or a different model. You can also email us directly using the address below."));
+      var b = el("button", "btn", "Clear filters"); b.type = "button"; b.addEventListener("click", resetFilters);
+      e.appendChild(b);
+      $list.appendChild(e);
+      return;
+    }
+    items.forEach(function (d) { $list.appendChild(card(d)); });
+    if (state.focusKey) {
+      var t = document.querySelector('[data-k="' + state.focusKey + '"]');
+      if (t) t.focus();
+      state.focusKey = null;
+    }
+  }
+
+  function card(d) {
+    var open = state.openId === d.id;
+    var wrap = el("article", "card item" + (d.model === "Media Player" ? " mp" : "") + (open ? " open" : ""));
+    var head = el("button", "head");
+    head.type = "button";
+    head.setAttribute("aria-expanded", String(open));
+    head.setAttribute("data-k", "head-" + d.id);
+    var main = el("div", "head-main");
+    var tags = el("div", "tags");
+    tags.appendChild(el("span", "tag", d.model));
+    tags.appendChild(el("span", "tag plain", d.cat));
+    if (state.solved[d.id] === "yes") tags.appendChild(el("span", "tag", "Resolved"));
+    main.appendChild(tags);
+    main.appendChild(el("span", "issue", d.issue));
+    head.appendChild(main);
+    var chev = svg("M6 9l6 6 6-6", 20); chev.setAttribute("class", "chev");
+    head.appendChild(chev);
+    head.addEventListener("click", function () {
+      state.openId = open ? null : d.id; state.focusKey = "head-" + d.id; render();
+    });
+    wrap.appendChild(head);
+    if (open) wrap.appendChild(body(d));
+    return wrap;
+  }
+
+  function body(d) {
+    var b = el("div", "body");
+    var a = el("div", "block action");
+    a.appendChild(el("h3", null, "Recommended action"));
+    a.appendChild(el("p", null, d.action));
+    b.appendChild(a);
+    if (d.note) {
+      var n = el("div", "block note");
+      n.appendChild(el("h3", null, "Note"));
+      n.appendChild(el("p", null, d.note));
+      b.appendChild(n);
+    }
+    b.appendChild(el("div", "divider"));
+
+    var ask = el("div", "ask");
+    ask.appendChild(el("h3", null, "Did this solve your issue?"));
+    var seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "Resolution status");
+    var yes = el("button", "btn yes", "Yes, it's resolved");
+    var no = el("button", "btn no", "No, I need more help");
+    yes.type = no.type = "button";
+    yes.setAttribute("data-k", "yes-" + d.id); no.setAttribute("data-k", "no-" + d.id);
+    yes.setAttribute("aria-pressed", String(state.solved[d.id] === "yes"));
+    no.setAttribute("aria-pressed", String(state.solved[d.id] === "no"));
+    yes.addEventListener("click", function () { state.solved[d.id] = "yes"; state.focusKey = "yes-" + d.id; render(); });
+    no.addEventListener("click", function () { state.solved[d.id] = "no"; state.focusKey = "no-" + d.id; render(); });
+    seg.appendChild(yes); seg.appendChild(no);
+    ask.appendChild(seg);
+    b.appendChild(ask);
+
+    if (state.solved[d.id] === "yes") {
+      var s = el("div", "success");
+      s.appendChild(svg("M20 6L9 17l-5-5", 20));
+      s.appendChild(el("span", null, "Glad that fixed it. No further action is needed."));
+      b.appendChild(s);
+    } else if (state.solved[d.id] === "no") {
+      b.appendChild(form(d));
+    }
+    return b;
+  }
+
+  function form(d) {
+    var draft = state.drafts[d.id] || (state.drafts[d.id] = { text: "", email: "" });
+    var f = el("div", "form");
+
+    var f1 = el("div", "field");
+    var l1 = el("label", null, "Describe your issue in detail (up to " + MAX_LEN + " characters)");
+    l1.setAttribute("for", "ta-" + d.id);
+    var ta = el("textarea", "control");
+    ta.id = "ta-" + d.id; ta.maxLength = MAX_LEN; ta.value = draft.text;
+    ta.placeholder = "What happened, what you already tried, and any error message you see.";
+    var counter = el("span", "counter");
+    function upd() {
+      var n = ta.value.length;
+      counter.textContent = n + " / " + MAX_LEN;
+      counter.className = "counter" + (n >= MAX_LEN ? " max" : "");
+    }
+    ta.addEventListener("input", function () { draft.text = ta.value; delete state.sent[d.id]; upd(); });
+    upd();
+    f1.appendChild(l1); f1.appendChild(ta); f1.appendChild(counter);
+    f.appendChild(f1);
+
+    var f2 = el("div", "field");
+    var l2 = el("label", null, "Your email (so we can reply)");
+    l2.setAttribute("for", "em-" + d.id);
+    var em = el("input", "control"); em.id = "em-" + d.id; em.type = "email"; em.value = draft.email; em.placeholder = "name@example.com";
+    em.addEventListener("input", function () { draft.email = em.value; delete state.sent[d.id]; });
+    f2.appendChild(l2); f2.appendChild(em);
+    f.appendChild(f2);
+
+    f.appendChild(el("p", "hint", "Model, category and issue are added to your message automatically."));
+
+    var err = el("p", "error"); err.setAttribute("role", "alert");
+    err.textContent = state.errors[d.id] || "";
+    f.appendChild(err);
+
+    var send = el("button", "btn primary", "Send to manufacturer");
+    send.type = "button";
+    send.style.alignSelf = "flex-start";
+    send.addEventListener("click", function () {
+      var ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim());
+      if (!draft.text.trim()) { state.errors[d.id] = "Please describe your issue."; render(); return; }
+      if (!ok) { state.errors[d.id] = "Please enter a valid email address."; render(); return; }
+      state.errors[d.id] = "";
+      state.sent[d.id] = buildMessage(d, draft);
+      state.focusKey = "panel-" + d.id;
+      render();
+    });
+    f.appendChild(send);
+
+    var msg = state.sent[d.id];
+    if (msg) {
+      var p = el("div", "send");
+      p.tabIndex = -1; p.setAttribute("data-k", "panel-" + d.id);
+      p.appendChild(el("p", null, "Your message is ready. It has not been sent yet. Open your email app and press Send, or copy the message and email it to:"));
+      p.appendChild(el("span", "addr", SUPPORT_EMAIL));
+      var pv = el("textarea", "control preview"); pv.readOnly = true; pv.rows = 8;
+      pv.setAttribute("aria-label", "Message preview");
+      pv.value = "Subject: " + msg.subject + "\n\n" + msg.body;
+      p.appendChild(pv);
+      var acts = el("div", "seg");
+      var open = el("a", "btn primary", "Open email app"); open.href = mailto(msg.subject, msg.body);
+      var cp = el("button", "btn", "Copy message"); cp.type = "button";
+      var toast = el("span", "toast"); toast.setAttribute("role", "status");
+      cp.addEventListener("click", function () {
+        copyText("To: " + SUPPORT_EMAIL + "\nSubject: " + msg.subject + "\n\n" + msg.body, pv).then(function (ok) {
+          toast.textContent = ok ? "Copied" : "Select the text above and copy it.";
+        });
+      });
+      acts.appendChild(open); acts.appendChild(cp); acts.appendChild(toast);
+      p.appendChild(acts);
+      f.appendChild(p);
+    }
+    return f;
+  }
+
+  // Footer contact
+  document.getElementById("footAddr").textContent = SUPPORT_EMAIL;
+  document.getElementById("footMail").href = "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("[Support] Product inquiry");
+  document.getElementById("footCopy").addEventListener("click", function () {
+    var t = document.getElementById("footToast");
+    copyText(SUPPORT_EMAIL, null).then(function (ok) { t.textContent = ok ? "Copied" : "Select the address and copy it."; });
+  });
+
+  drawCats();
+  render();
+})();
+</script>
+
+</body></html>
